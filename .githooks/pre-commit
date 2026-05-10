@@ -1,0 +1,27 @@
+#!/bin/sh
+set -eu
+
+ROOT="$(git rev-parse --show-toplevel)"
+cd "$ROOT"
+
+if [ ! -f package.json ]; then
+  echo "pre-commit: package.json not found; skipping npm validation."
+  exit 0
+fi
+
+if ! command -v npm >/dev/null 2>&1; then
+  echo "pre-commit: npm is required to run lint, build, and test." >&2
+  exit 1
+fi
+
+run_npm_script() {
+  script_name="$1"
+  echo "pre-commit: running npm run $script_name"
+  npm run "$script_name"
+}
+
+run_npm_script lint
+run_npm_script build
+run_npm_script test
+
+echo "pre-commit: validation passed."

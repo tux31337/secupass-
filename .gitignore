@@ -1,0 +1,13 @@
+node_modules/
+.next/
+out/
+dist/
+next-env.d.ts
+tsconfig.tsbuildinfo
+
+# phase execution outputs
+phases/**/phase*-output.json
+phases/**/step*-output.json
+
+# Codex hook runtime state
+.codex/state/
