@@ -1,0 +1,17 @@
+{
+  "expo": {
+    "name": "정보보안기사 단답 트레이너",
+    "slug": "security-short-answer-trainer",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "platforms": ["ios", "android"],
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.securityproblem.shorttrainer"
+    },
+    "android": {
+      "package": "com.securityproblem.shorttrainer"
+    }
+  }
+}
