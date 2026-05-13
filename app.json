@@ -11,7 +11,8 @@
       "bundleIdentifier": "com.securityproblem.shorttrainer"
     },
     "android": {
-      "package": "com.securityproblem.shorttrainer"
+      "package": "com.securityproblem.shorttrainer",
+      "softwareKeyboardLayoutMode": "resize"
     }
   }
 }
