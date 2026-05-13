@@ -30,6 +30,28 @@ export const DIFFICULTY_LABELS: Record<QuestionDifficulty, string> = {
 
 export type SourceType = "rewritten" | "official_original" | "licensed_original";
 
+export const EXAM_PARTS = [
+  "security_general",
+  "web_security",
+  "system_security",
+  "network_security",
+  "cryptography",
+  "application_security",
+  "management_security",
+] as const;
+
+export type ExamPart = (typeof EXAM_PARTS)[number];
+
+export const EXAM_PART_LABELS: Record<ExamPart, string> = {
+  security_general: "정보보안일반",
+  web_security: "웹 보안",
+  system_security: "시스템 보안",
+  network_security: "네트워크 보안",
+  cryptography: "암호",
+  application_security: "애플리케이션 보안",
+  management_security: "관리 보안",
+};
+
 export type ShortAnswerKey = {
   value: string;
   caseSensitive: boolean;
@@ -48,4 +70,7 @@ export type ShortQuestion = {
   explanation: string;
   sourceType: SourceType;
   licenseRef?: string;
+  examPart: ExamPart;
+  conceptId: string;
+  sourceNoteRefs: string[];
 };

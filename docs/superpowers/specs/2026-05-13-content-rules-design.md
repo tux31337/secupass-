@@ -13,7 +13,7 @@ v1은 정보보안기사 실기 단답형 전용 앱이다. 기출 원문과 원
 - v2 서술형 문항: 별도 타입으로 추가하되 v1 단답형과 같은 `conceptId`를 공유한다.
 
 ## 구현 전제
-현재 코드의 `ShortQuestion`에는 `conceptId`, `examPart`, `sourceNoteRefs`가 없다. 구현 단계에서는 기존 필드를 깨지 않으면서 선택 필드로 확장하고, 검증 테스트를 먼저 추가한다.
+`ShortQuestion`은 `conceptId`, `examPart`, `sourceNoteRefs`를 포함한다. v1 출시 검증은 이 메타데이터가 없는 문항을 실패시켜 향후 서술형 확장과 원천 자료 추적이 끊기지 않게 한다.
 
 ## 검증 기준
 - v1 출시 검증은 `sourceType: "rewritten"`만 허용한다.

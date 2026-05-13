@@ -24,6 +24,9 @@ const question: ShortQuestion = {
   ],
   explanation: "SQL Injection은 입력값으로 쿼리 구조를 바꾸는 공격이다.",
   sourceType: "rewritten",
+  examPart: "web_security",
+  conceptId: "web-security-sql-injection",
+  sourceNoteRefs: ["docs/content-sources/seed/initial-short-answer-seed.md"],
 };
 
 test("case-insensitive answers ignore case and repeated whitespace", () => {
