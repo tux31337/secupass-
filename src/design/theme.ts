@@ -1,23 +1,62 @@
-export const colors = {
-  background: "#FAF8FB",
-  surface: "#FFFFFF",
-  surfaceMuted: "#F6F1F8",
-  primary: "#5F0080",
-  primaryPressed: "#4B0067",
-  primarySoft: "#F7EFFA",
-  primaryBorder: "#DDB7EA",
-  textPrimary: "#1F1B24",
-  textSecondary: "#6B6272",
-  textMuted: "#8B8291",
-  border: "#E5DDEB",
-  borderStrong: "#CDBED6",
-  successBackground: "#ECF8F0",
-  successBorder: "#8CC99E",
-  successText: "#186338",
-  errorBackground: "#FFF0EE",
-  errorBorder: "#E6A092",
-  errorText: "#9B2F1E",
+export const themeColors = {
+  light: {
+    background: "#FFFFFF",
+    surface: "#FFFFFF",
+    surfaceMuted: "#F4F4F5",
+    surfaceContainer: "#FAFAFA",
+    primary: "#18181B",
+    primaryText: "#FFFFFF",
+    primaryPressed: "#27272A",
+    primarySoft: "#E4E4E7",
+    primaryBorder: "#D4D4D8",
+    textPrimary: "#171717",
+    textSecondary: "#52525B",
+    textMuted: "#71717A",
+    border: "#E4E4E7",
+    borderStrong: "#D4D4D8",
+    successBackground: "#CCFBF1",
+    successBorder: "#0F766E",
+    successText: "#115E59",
+    errorBackground: "#FEE2E2",
+    errorBorder: "#DC2626",
+    errorText: "#991B1B",
+    backdrop: "rgba(23, 23, 23, 0.32)",
+  },
+  dark: {
+    background: "#131316",
+    surface: "#1B1B1E",
+    surfaceMuted: "#252529",
+    surfaceContainer: "#17171A",
+    primary: "#E4E1E5",
+    primaryText: "#18181B",
+    primaryPressed: "#C7C6CA",
+    primarySoft: "#303033",
+    primaryBorder: "#3F3F46",
+    textPrimary: "#E4E1E5",
+    textSecondary: "#C7C6CA",
+    textMuted: "#A1A1AA",
+    border: "rgba(255, 255, 255, 0.1)",
+    borderStrong: "#3F3F46",
+    successBackground: "#134E4A",
+    successBorder: "#5EEAD4",
+    successText: "#CCFBF1",
+    errorBackground: "#7F1D1D",
+    errorBorder: "#F87171",
+    errorText: "#FEE2E2",
+    backdrop: "rgba(0, 0, 0, 0.56)",
+  },
 } as const;
+
+export type ThemeColors = {
+  readonly [Token in keyof (typeof themeColors)["light"]]: string;
+};
+export type ThemeMode = "light" | "dark" | null | undefined;
+
+export function getThemeColors(colorScheme: ThemeMode): ThemeColors {
+  return colorScheme === "dark" ? themeColors.dark : themeColors.light;
+}
+
+export const colors = themeColors.light;
 
 export const spacing = {
   xs: 4,

@@ -4,16 +4,22 @@
 
 ## Visual Direction
 
+- Current palette: use Atelier semantic colors with system light/dark mode support. Do not reintroduce the previous purple-only palette.
+
 - v1은 문제를 빠르게 읽고, 단답을 입력하고, 즉시 채점하는 학습 앱이다. 화면은 조용하고 명확해야 하며 장식보다 가독성과 반복 사용성을 우선한다.
-- 색상은 마켓컬리에서 연상되는 보라색을 절제해 사용한다. 브랜드를 복제하지 않고, 학습 앱에 맞는 흰색/중립 배경 위에 보라색을 주요 액션과 선택 상태에만 쓴다.
+- 색상은 Atelier 프로젝트의 흰색/중립 배경, 차콜 primary, teal 계열 피드백 색상을 기준으로 사용한다. 학습 앱에 맞게 장식성보다 명도 대비와 반복 사용성을 우선한다.
 - 기본 토큰은 `src/design/theme.ts`를 기준으로 한다.
-  - Primary: `#5F0080`
-  - Pressed primary: `#4B0067`
-  - Soft primary surface: `#F7EFFA`
-  - App background: `#FAF8FB`
-  - Surface: `#FFFFFF`
-  - Border: `#E5DDEB`
-- 보라색 면적을 과하게 넓히지 않는다. 헤더, 본문, 입력 영역은 흰색과 중립색을 중심으로 두고, 선택 상태, CTA, 메타 강조에만 보라색을 사용한다.
+  - Palette source: `C:\study\atelier\packages\tailwind-config\tokens.css`
+  - Light background: `#FFFFFF`
+  - Light primary: `#18181B`
+  - Light muted surface: `#F4F4F5`
+  - Light border: `#E4E4E7`
+  - Dark background: `#131316`
+  - Dark surface: `#1B1B1E`
+  - Dark primary: `#E4E1E5`
+  - Dark muted surface: `#252529`
+  - Dark border: `rgba(255, 255, 255, 0.1)`
+- 강조색 면적을 과하게 넓히지 않는다. 헤더, 본문, 입력 영역은 배경/표면/중립색을 중심으로 두고, 선택 상태, CTA, 메타 강조, 채점 피드백에만 강조색을 사용한다.
 - 반복 UI의 border radius는 8px 이하를 기본으로 한다. 카드 안에 카드를 중첩하지 않는다.
 
 ## Layout Rules
