@@ -4,21 +4,35 @@ import test from "node:test";
 
 import ts from "typescript";
 
-const appSource = readFileSync("App.tsx", "utf8");
-const sourceFile = ts.createSourceFile("App.tsx", appSource, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+const screenScaffoldSource = readFileSync("src/components/ScreenScaffold.tsx", "utf8");
+const answerDockSource = readFileSync("src/components/AnswerDock.tsx", "utf8");
+const sourceFile = ts.createSourceFile(
+  "ScreenScaffold.tsx",
+  screenScaffoldSource,
+  ts.ScriptTarget.Latest,
+  true,
+  ts.ScriptKind.TSX,
+);
+const answerDockSourceFile = ts.createSourceFile(
+  "AnswerDock.tsx",
+  answerDockSource,
+  ts.ScriptTarget.Latest,
+  true,
+  ts.ScriptKind.TSX,
+);
 
-function findJsxOpeningElements(name: string): ts.JsxOpeningLikeElement[] {
+function findJsxOpeningElements(name: string, file: ts.SourceFile = sourceFile): ts.JsxOpeningLikeElement[] {
   const matches: ts.JsxOpeningLikeElement[] = [];
 
   function visit(node: ts.Node) {
-    if ((ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) && node.tagName.getText(sourceFile) === name) {
+    if ((ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) && node.tagName.getText(file) === name) {
       matches.push(node);
     }
 
     ts.forEachChild(node, visit);
   }
 
-  visit(sourceFile);
+  visit(file);
   return matches;
 }
 
@@ -54,8 +68,8 @@ function hasJsxAncestorWithStyle(node: ts.Node, tagName: string, styleText: stri
 }
 
 test("question screen explicitly avoids the iOS and Android software keyboard", () => {
-  assert.match(appSource, /KeyboardAvoidingView/);
-  assert.match(appSource, /Platform\.select/);
+  assert.match(screenScaffoldSource, /KeyboardAvoidingView/);
+  assert.match(screenScaffoldSource, /Platform\.select/);
 
   const keyboardAvoidingViews = findJsxOpeningElements("KeyboardAvoidingView");
   assert.equal(keyboardAvoidingViews.length, 1);
@@ -64,10 +78,10 @@ test("question screen explicitly avoids the iOS and Android software keyboard", 
 });
 
 test("root layout reserves Android status bar space before rendering the header", () => {
-  assert.match(appSource, /StatusBar\.currentHeight/);
-  assert.match(appSource, /paddingTop:\s*Platform\.OS === "android" \? androidStatusBarInset : 0/);
-  assert.match(appSource, /backgroundColor=\{colors\.background\}/);
-  assert.match(appSource, /translucent=\{false\}/);
+  assert.match(screenScaffoldSource, /StatusBar\.currentHeight/);
+  assert.match(screenScaffoldSource, /paddingTop:\s*Platform\.OS === "android" \? androidStatusBarInset : 0/);
+  assert.match(screenScaffoldSource, /backgroundColor=\{colors\.background\}/);
+  assert.match(screenScaffoldSource, /translucent=\{false\}/);
 });
 
 test("question screen scrolls while the keyboard is open and keeps actions tappable", () => {
@@ -82,22 +96,22 @@ test("question screen scrolls while the keyboard is open and keeps actions tappa
 });
 
 test("answer input is docked outside the scrolling question content", () => {
-  const textInputs = findJsxOpeningElements("TextInput");
+  const textInputs = findJsxOpeningElements("TextInput", answerDockSourceFile);
   assert.equal(textInputs.length, 1);
-  assert.equal(hasJsxAncestorWithStyle(textInputs[0], "View", "{styles.answerDock}"), true);
+  assert.match(answerDockSource, /style=\{styles\.answerDock\}/);
 
   const verticalScrollView = findJsxOpeningElements("ScrollView").find(
     (element) => attributeText(element, "style") === "{styles.contentScroller}",
   );
 
   assert.ok(verticalScrollView);
-  assert.equal(textInputs[0].pos > verticalScrollView.pos && textInputs[0].end < verticalScrollView.end, false);
+  assert.ok(screenScaffoldSource.indexOf("{answerDock}") > verticalScrollView.end);
 });
 
 test("answer dock reserves bottom system navigation space on Android", () => {
-  assert.match(appSource, /const androidNavigationBarInset = spacing\.xxl/);
+  assert.match(answerDockSource, /const androidNavigationBarInset = spacing\.xxl/);
   assert.match(
-    appSource,
+    answerDockSource,
     /paddingBottom:\s*Platform\.OS === "android"\s*\?\s*spacing\.lg \+ androidNavigationBarInset\s*:\s*spacing\.lg/,
   );
 });
