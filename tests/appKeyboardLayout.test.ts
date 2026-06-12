@@ -56,6 +56,8 @@ function hasJsxAncestorWithStyle(node: ts.Node, tagName: string, styleText: stri
 test("question screen explicitly avoids the iOS and Android software keyboard", () => {
   assert.match(appSource, /KeyboardAvoidingView/);
   assert.match(appSource, /Platform\.select/);
+  assert.match(appSource, /ios:\s*"padding" as const/);
+  assert.match(appSource, /android:\s*"height" as const/);
 
   const keyboardAvoidingViews = findJsxOpeningElements("KeyboardAvoidingView");
   assert.equal(keyboardAvoidingViews.length, 1);
@@ -63,9 +65,11 @@ test("question screen explicitly avoids the iOS and Android software keyboard", 
   assert.equal(attributeText(keyboardAvoidingViews[0], "style"), "{styles.keyboardAvoiding}");
 });
 
-test("root layout reserves Android status bar space before rendering the header", () => {
-  assert.match(appSource, /StatusBar\.currentHeight/);
-  assert.match(appSource, /paddingTop:\s*Platform\.OS === "android" \? androidStatusBarInset : 0/);
+test("root layout reserves safe-area space before rendering the header", () => {
+  assert.match(appSource, /SafeAreaProvider/);
+  assert.match(appSource, /useSafeAreaInsets/);
+  assert.match(appSource, /const insets = useSafeAreaInsets\(\)/);
+  assert.match(appSource, /paddingTop:\s*insets\.top/);
   assert.match(appSource, /backgroundColor=\{colors\.background\}/);
   assert.match(appSource, /translucent=\{false\}/);
 });
@@ -84,7 +88,7 @@ test("question screen scrolls while the keyboard is open and keeps actions tappa
 test("answer input is docked outside the scrolling question content", () => {
   const textInputs = findJsxOpeningElements("TextInput");
   assert.equal(textInputs.length, 1);
-  assert.equal(hasJsxAncestorWithStyle(textInputs[0], "View", "{styles.answerDock}"), true);
+  assert.equal(hasJsxAncestorWithStyle(textInputs[0], "View", "{[styles.answerDock, answerDockStyle]}"), true);
 
   const verticalScrollView = findJsxOpeningElements("ScrollView").find(
     (element) => attributeText(element, "style") === "{styles.contentScroller}",
@@ -94,10 +98,50 @@ test("answer input is docked outside the scrolling question content", () => {
   assert.equal(textInputs[0].pos > verticalScrollView.pos && textInputs[0].end < verticalScrollView.end, false);
 });
 
-test("answer dock reserves bottom system navigation space on Android", () => {
-  assert.match(appSource, /const androidNavigationBarInset = spacing\.xxl/);
-  assert.match(
-    appSource,
-    /paddingBottom:\s*Platform\.OS === "android"\s*\?\s*spacing\.lg \+ androidNavigationBarInset\s*:\s*spacing\.lg/,
-  );
+test("answer dock reserves measured bottom safe-area space", () => {
+  assert.match(appSource, /const bottomSafeAreaInset = Math\.max\(insets\.bottom, spacing\.sm\)/);
+  assert.match(appSource, /const answerDockStyle = \{\s*paddingBottom:\s*bottomSafeAreaInset \+ spacing\.md,\s*\}/s);
+  assert.match(appSource, /style=\{\[styles\.answerDock, answerDockStyle\]\}/);
+  assert.doesNotMatch(appSource, /androidNavigationBarInset/);
+  assert.doesNotMatch(appSource, /paddingBottom:\s*Platform\.OS === "android"/);
+});
+
+test("category selector sheet reserves measured bottom safe-area space", () => {
+  assert.match(appSource, /const categorySelectorSheetStyle = \{\s*paddingBottom:\s*bottomSafeAreaInset \+ spacing\.lg,\s*\}/s);
+  assert.match(appSource, /style=\{\[styles\.categorySelectorSheet, categorySelectorSheetStyle\]\}/);
+});
+
+test("answer action keeps a stable height instead of flexing toward the bottom edge", () => {
+  assert.match(appSource, /alignSelf:\s*"stretch"/);
+  assert.doesNotMatch(appSource, /actionButton:\s*\{[^}]*flex:\s*1/s);
+});
+
+test("answer dock shows one state-based full-width action instead of side-by-side buttons", () => {
+  assert.match(appSource, /const answerActionLabel = result \? "다음" : "채점"/);
+  assert.match(appSource, /const answerActionHandler = result \? moveNext : submitAnswer/);
+  assert.match(appSource, /onPress=\{answerActionHandler\}/);
+  assert.match(appSource, /\{answerActionLabel\}/);
+  assert.doesNotMatch(appSource, /styles\.secondaryButton/);
+  assert.doesNotMatch(appSource, /secondaryButtonText/);
+});
+
+test("editing the answer after grading returns the dock action to grading mode", () => {
+  assert.match(appSource, /function updateAnswer\(nextAnswer: string\)/);
+  assert.match(appSource, /setAnswer\(nextAnswer\)/);
+  assert.match(appSource, /setResult\(null\)/);
+  assert.match(appSource, /onChangeText=\{updateAnswer\}/);
+});
+
+test("learning screen uses compact spacing so the question stays prominent", () => {
+  assert.match(appSource, /compactScreenGap/);
+  assert.match(appSource, /compactQuestionPadding/);
+  assert.match(appSource, /gap:\s*compactScreenGap/);
+  assert.match(appSource, /padding:\s*compactQuestionPadding/);
+});
+
+test("question panel does not render category or difficulty metadata tags", () => {
+  assert.doesNotMatch(appSource, /styles\.metaRow/);
+  assert.doesNotMatch(appSource, /styles\.metaText/);
+  assert.doesNotMatch(appSource, /CATEGORY_LABELS\[currentQuestion\.category\]/);
+  assert.doesNotMatch(appSource, /DIFFICULTY_LABELS\[currentQuestion\.difficulty\]/);
 });

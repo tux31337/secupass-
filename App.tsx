@@ -4,7 +4,6 @@ import {
   Modal,
   Platform,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -12,13 +11,14 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { questionBank } from "./src/data/questions.ts";
 import { colors, radius, spacing, touchTarget } from "./src/design/theme.ts";
 import { gradeShortAnswer, type GradeResult } from "./src/domain/grading.ts";
+import { RangeScreen } from "./src/range/RangeScreen.tsx";
 import {
   CATEGORY_LABELS,
-  DIFFICULTY_LABELS,
   QUESTION_CATEGORIES,
   type QuestionCategory,
 } from "./src/types.ts";
@@ -35,15 +35,40 @@ const keyboardAvoidingBehavior = Platform.select({
   android: "height" as const,
   default: undefined,
 });
-const androidStatusBarInset = StatusBar.currentHeight ?? 0;
-const androidNavigationBarInset = spacing.xxl;
+const compactScreenGap = spacing.md;
+const compactQuestionPadding = spacing.lg;
 
 export default function App() {
+  const [screen, setScreen] = useState<"quiz" | "range">("quiz");
+
+  return (
+    <SafeAreaProvider>
+      {screen === "range" ? (
+        <RangeScreen onExit={() => setScreen("quiz")} />
+      ) : (
+        <LearningScreen onOpenRange={() => setScreen("range")} />
+      )}
+    </SafeAreaProvider>
+  );
+}
+
+function LearningScreen({ onOpenRange }: { onOpenRange: () => void }) {
+  const insets = useSafeAreaInsets();
   const [category, setCategory] = useState<CategoryFilter>("all");
   const [questionIndex, setQuestionIndex] = useState(0);
   const [answer, setAnswer] = useState("");
   const [result, setResult] = useState<GradeResult | null>(null);
   const [categorySelectorOpen, setCategorySelectorOpen] = useState(false);
+  const bottomSafeAreaInset = Math.max(insets.bottom, spacing.sm);
+  const rootSafeAreaStyle = {
+    paddingTop: insets.top,
+  };
+  const answerDockStyle = {
+    paddingBottom: bottomSafeAreaInset + spacing.md,
+  };
+  const categorySelectorSheetStyle = {
+    paddingBottom: bottomSafeAreaInset + spacing.lg,
+  };
 
   const categoryOptions = useMemo<CategoryOption[]>(
     () => [
@@ -69,6 +94,8 @@ export default function App() {
   const selectedCategory = categoryOptions.find((option) => option.value === category) ?? categoryOptions[0];
   const selectedCategoryLabel = selectedCategory.label;
   const selectedCategoryCount = selectedCategory.count;
+  const answerActionLabel = result ? "다음" : "채점";
+  const answerActionHandler = result ? moveNext : submitAnswer;
 
   function selectCategory(nextCategory: CategoryFilter) {
     setCategory(nextCategory);
@@ -79,6 +106,11 @@ export default function App() {
 
   function submitAnswer() {
     setResult(gradeShortAnswer(currentQuestion, answer));
+  }
+
+  function updateAnswer(nextAnswer: string) {
+    setAnswer(nextAnswer);
+    setResult(null);
   }
 
   function moveNext() {
@@ -93,7 +125,7 @@ export default function App() {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={[styles.safeArea, rootSafeAreaStyle]}>
       <StatusBar backgroundColor={colors.background} barStyle="dark-content" translucent={false} />
       <KeyboardAvoidingView behavior={keyboardAvoidingBehavior} style={styles.keyboardAvoiding}>
         <View style={styles.layout}>
@@ -105,33 +137,45 @@ export default function App() {
           >
             <View style={styles.header}>
               <Text style={styles.appTitle}>정보보안기사 단답</Text>
-              <Text style={styles.counter}>
-                {questionIndex + 1}/{filteredQuestions.length}
-              </Text>
-            </View>
-
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => setCategorySelectorOpen(true)}
-              style={({ pressed }) => [
-                styles.categorySelectorTrigger,
-                pressed && styles.categorySelectorTriggerPressed,
-              ]}
-            >
-              <View style={styles.categorySelectorCopy}>
-                <Text style={styles.categorySelectorLabel}>학습 범위</Text>
-                <Text numberOfLines={1} style={styles.selectedCategoryLabel}>
-                  {selectedCategoryLabel}
+              <View style={styles.headerActions}>
+                <Pressable
+                  accessibilityLabel="3D 드라이빙레인지 열기"
+                  accessibilityRole="button"
+                  onPress={onOpenRange}
+                  style={({ pressed }) => [
+                    styles.rangeButton,
+                    pressed && styles.categorySelectorButtonPressed,
+                  ]}
+                >
+                  <Text style={styles.rangeButtonText}>⛳ 레인지</Text>
+                </Pressable>
+                <Text style={styles.counter}>
+                  {questionIndex + 1}/{filteredQuestions.length}
                 </Text>
               </View>
-              <Text style={styles.selectedCategoryCount}>{selectedCategoryCount}문항</Text>
-            </Pressable>
+            </View>
+
+            <View style={styles.categorySelectorRow}>
+              <View style={styles.categorySelectorInfo}>
+                <Text style={styles.categorySelectorLabel}>학습 범위</Text>
+                <View style={styles.categorySelectorSummary}>
+                  <Text numberOfLines={1} style={styles.selectedCategoryLabel}>
+                    {selectedCategoryLabel}
+                  </Text>
+                  <Text style={styles.selectedCategoryCount}>{selectedCategoryCount}문항</Text>
+                </View>
+              </View>
+              <Pressable
+                accessibilityLabel="학습 범위 변경"
+                accessibilityRole="button"
+                onPress={() => setCategorySelectorOpen(true)}
+                style={({ pressed }) => [styles.categorySelectorButton, pressed && styles.categorySelectorButtonPressed]}
+              >
+                <Text style={styles.categorySelectorButtonText}>변경</Text>
+              </Pressable>
+            </View>
 
             <View style={styles.questionPanel}>
-              <View style={styles.metaRow}>
-                <Text style={styles.metaText}>{CATEGORY_LABELS[currentQuestion.category]}</Text>
-                <Text style={styles.metaText}>{DIFFICULTY_LABELS[currentQuestion.difficulty]}</Text>
-              </View>
               <Text style={styles.prompt}>{currentQuestion.prompt}</Text>
             </View>
 
@@ -144,10 +188,10 @@ export default function App() {
             ) : null}
           </ScrollView>
 
-          <View style={styles.answerDock}>
+          <View style={[styles.answerDock, answerDockStyle]}>
             <TextInput
               value={answer}
-              onChangeText={setAnswer}
+              onChangeText={updateAnswer}
               placeholder="답안 입력"
               autoCapitalize="none"
               autoCorrect={false}
@@ -156,14 +200,9 @@ export default function App() {
               onSubmitEditing={submitAnswer}
             />
 
-            <View style={styles.actions}>
-              <Pressable style={[styles.actionButton, styles.primaryButton]} onPress={submitAnswer}>
-                <Text style={styles.primaryButtonText}>채점</Text>
-              </Pressable>
-              <Pressable style={[styles.actionButton, styles.secondaryButton]} onPress={moveNext}>
-                <Text style={styles.secondaryButtonText}>다음</Text>
-              </Pressable>
-            </View>
+            <Pressable style={[styles.actionButton, styles.primaryButton]} onPress={answerActionHandler}>
+              <Text style={styles.primaryButtonText}>{answerActionLabel}</Text>
+            </Pressable>
           </View>
         </View>
       </KeyboardAvoidingView>
@@ -181,7 +220,7 @@ export default function App() {
             onPress={() => setCategorySelectorOpen(false)}
             style={styles.categorySelectorBackdrop}
           />
-          <View style={styles.categorySelectorSheet}>
+          <View style={[styles.categorySelectorSheet, categorySelectorSheetStyle]}>
             <View style={styles.sheetHandle} />
             <View style={styles.sheetHeader}>
               <Text style={styles.sheetTitle}>카테고리 선택</Text>
@@ -222,7 +261,7 @@ export default function App() {
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -230,7 +269,6 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: colors.background,
-    paddingTop: Platform.OS === "android" ? androidStatusBarInset : 0,
   },
   keyboardAvoiding: {
     flex: 1,
@@ -243,10 +281,10 @@ const styles = StyleSheet.create({
   },
   screen: {
     flexGrow: 1,
-    gap: spacing.lg,
-    paddingBottom: spacing.xxl,
-    paddingHorizontal: spacing.xl,
-    paddingTop: spacing.xl,
+    gap: compactScreenGap,
+    paddingBottom: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
   },
   header: {
     alignItems: "center",
@@ -257,32 +295,49 @@ const styles = StyleSheet.create({
   appTitle: {
     color: colors.textPrimary,
     flexShrink: 1,
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: "800",
   },
   counter: {
     color: colors.primary,
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "700",
   },
-  categorySelectorTrigger: {
+  headerActions: {
     alignItems: "center",
-    backgroundColor: colors.surface,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    borderWidth: 1,
     flexDirection: "row",
+    flexShrink: 0,
     gap: spacing.md,
-    justifyContent: "center",
-    minHeight: touchTarget.minHeight,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
   },
-  categorySelectorTriggerPressed: {
+  rangeButton: {
+    alignItems: "center",
     backgroundColor: colors.primarySoft,
+    borderColor: colors.primaryBorder,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    justifyContent: "center",
+    minHeight: 36,
+    paddingHorizontal: spacing.md,
   },
-  categorySelectorCopy: {
+  rangeButtonText: {
+    color: colors.primary,
+    fontSize: 13,
+    fontWeight: "800",
+  },
+  categorySelectorRow: {
+    alignItems: "center",
+    flexDirection: "row",
+    gap: spacing.lg,
+    justifyContent: "space-between",
+  },
+  categorySelectorInfo: {
     flex: 1,
+    gap: spacing.xs,
+    minWidth: 0,
+  },
+  categorySelectorSummary: {
+    alignItems: "center",
+    flexDirection: "row",
     gap: spacing.xs,
     minWidth: 0,
   },
@@ -293,10 +348,31 @@ const styles = StyleSheet.create({
   },
   selectedCategoryLabel: {
     color: colors.textPrimary,
-    fontSize: 18,
+    flexShrink: 1,
+    fontSize: 16,
     fontWeight: "800",
+    minWidth: 0,
   },
   selectedCategoryCount: {
+    color: colors.textMuted,
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  categorySelectorButton: {
+    alignItems: "center",
+    backgroundColor: colors.primarySoft,
+    borderColor: colors.primaryBorder,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    flexShrink: 0,
+    justifyContent: "center",
+    minHeight: touchTarget.minHeight,
+    paddingHorizontal: spacing.md,
+  },
+  categorySelectorButtonPressed: {
+    backgroundColor: colors.surfaceMuted,
+  },
+  categorySelectorButtonText: {
     color: colors.primary,
     fontSize: 14,
     fontWeight: "800",
@@ -307,21 +383,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     borderWidth: 1,
     gap: spacing.md,
-    padding: spacing.xl,
-  },
-  metaRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
-  },
-  metaText: {
-    backgroundColor: colors.primarySoft,
-    borderRadius: radius.sm,
-    color: colors.primary,
-    fontSize: 13,
-    fontWeight: "700",
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
+    padding: compactQuestionPadding,
   },
   prompt: {
     color: colors.textSecondary,
@@ -334,54 +396,39 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     borderWidth: 1,
     color: colors.textPrimary,
-    fontSize: 18,
-    minHeight: 52,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-  },
-  actions: {
-    flexDirection: "row",
-    gap: spacing.md,
+    fontSize: 16,
+    minHeight: touchTarget.minHeight,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
   },
   answerDock: {
     backgroundColor: colors.background,
     borderTopColor: colors.border,
     borderTopWidth: 1,
-    gap: spacing.md,
-    paddingBottom: Platform.OS === "android" ? spacing.lg + androidNavigationBarInset : spacing.lg,
-    paddingHorizontal: spacing.xl,
-    paddingTop: spacing.md,
+    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
   },
   actionButton: {
     alignItems: "center",
+    alignSelf: "stretch",
     borderRadius: radius.md,
-    flex: 1,
     justifyContent: "center",
     minHeight: touchTarget.minHeight,
   },
   primaryButton: {
     backgroundColor: colors.primary,
   },
-  secondaryButton: {
-    backgroundColor: colors.surface,
-    borderColor: colors.borderStrong,
-    borderWidth: 1,
-  },
   primaryButtonText: {
     color: colors.surface,
-    fontSize: 16,
-    fontWeight: "800",
-  },
-  secondaryButtonText: {
-    color: colors.primary,
     fontSize: 16,
     fontWeight: "800",
   },
   feedback: {
     borderRadius: radius.md,
     borderWidth: 1,
-    gap: spacing.sm,
-    padding: spacing.lg,
+    gap: spacing.xs,
+    padding: spacing.md,
   },
   correctFeedback: {
     backgroundColor: colors.successBackground,

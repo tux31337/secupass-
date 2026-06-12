@@ -4,7 +4,10 @@
     "slug": "security-short-answer-trainer",
     "version": "0.1.0",
     "orientation": "portrait",
-    "platforms": ["ios", "android"],
+    "platforms": [
+      "ios",
+      "android"
+    ],
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
@@ -13,6 +16,9 @@
     "android": {
       "package": "com.securityproblem.shorttrainer",
       "softwareKeyboardLayoutMode": "resize"
-    }
+    },
+    "plugins": [
+      "expo-asset"
+    ]
   }
 }
